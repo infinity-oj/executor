@@ -1,4 +1,4 @@
-module github.com/infinity-oj/builder
+module github.com/infinity-oj/executor
 
 go 1.14
 
