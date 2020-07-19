@@ -48,46 +48,53 @@ func main() {
 		if err := ioutil.WriteFile("elf", res.Slots[0].Value, 0755); err != nil {
 			log.Fatal(err)
 		}
-		if err := ioutil.WriteFile("in", res.Slots[1].Value, 0644); err != nil {
+
+		cmd := exec.Command("./elf")
+
+		stdin, err := cmd.StdinPipe()
+		if err != nil {
 			log.Fatal(err)
 		}
 
-		stdin, err := os.OpenFile("stdin", os.O_CREATE|os.O_WRONLY, 0600)
+		stdout, err := os.OpenFile("stdout", os.O_CREATE|os.O_RDWR, 0777)
 		if err != nil {
 			log.Fatalln(err)
 		}
-		stdout, err := os.OpenFile("stdout", os.O_CREATE|os.O_WRONLY, 0600)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		stderr, err := os.OpenFile("stderr", os.O_CREATE|os.O_WRONLY, 0600)
+		stderr, err := os.OpenFile("stderr", os.O_CREATE|os.O_WRONLY, 0777)
 		if err != nil {
 			log.Fatalln(err)
 		}
 
-		cmd := exec.Command("./elf")
-		cmd.Stdin = stdin
 		cmd.Stdout = stdout
 		cmd.Stderr = stderr
 
-		if err := cmd.Start(); err != nil {
+		err = cmd.Start()
+		if err != nil {
 			log.Fatal(err)
 		}
-
-		stdin.Close()
+		_, err = stdin.Write(res.Slots[1].Value)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		stdOut, err := ioutil.ReadAll(stdout)
 		stdErr, err := ioutil.ReadAll(stderr)
 
+		stdin.Close()
 		stdout.Close()
 		stderr.Close()
 
 		pushRes, err := pushJudgement(c, res.GetToken(), [][]byte{stdOut})
+		fmt.Println(stdOut)
 		fmt.Println(stdErr)
 		if err != nil {
 			log.Fatal(err)
 		}
 		log.Println(pushRes.GetStatus())
+
+		os.Remove("stdin")
+		os.Remove("stdout")
+		os.Remove("stderr")
 
 		time.Sleep(time.Second)
 	}
