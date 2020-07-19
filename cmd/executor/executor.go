@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -51,7 +52,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		stdin, err := os.OpenFile("stdub", os.O_CREATE|os.O_WRONLY, 0600)
+		stdin, err := os.OpenFile("stdin", os.O_CREATE|os.O_WRONLY, 0600)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -64,30 +65,30 @@ func main() {
 			log.Fatalln(err)
 		}
 
-
-		cmd := exec.Command("./elf", "<", "in", ">", "out")
-
+		cmd := exec.Command("./elf")
 		cmd.Stdin = stdin
-		cmd.Stdout = stdout // 重定向标准输出到文件
+		cmd.Stdout = stdout
 		cmd.Stderr = stderr
 
-		//Run执行c包含的命令，并阻塞直到完成。  这里stdout被取出，cmd.Wait()无法正确获取stdin,stdout,stderr，则阻塞在那了
-		if err := cmd.Run(); err != nil {
+		if err := cmd.Start(); err != nil {
 			log.Fatal(err)
 		}
 
-		data, err := ioutil.ReadFile("out")
+		stdin.Close()
 
-		pushRes, err := pushJudgement(c, res.GetToken(), [][]byte{data})
+		stdOut, err := ioutil.ReadAll(stdout)
+		stdErr, err := ioutil.ReadAll(stderr)
+
+		stdout.Close()
+		stderr.Close()
+
+		pushRes, err := pushJudgement(c, res.GetToken(), [][]byte{stdOut})
+		fmt.Println(stdErr)
 		if err != nil {
 			log.Fatal(err)
 		}
 		log.Println(pushRes.GetStatus())
 
-		stdin.Close()
-		stdout.Close()
-		stderr.Close()
-		
 		time.Sleep(time.Second)
 	}
 }
