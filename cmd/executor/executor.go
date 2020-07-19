@@ -9,7 +9,7 @@ import (
 	"time"
 
 	proto "github.com/infinity-oj/api/protobuf-spec"
-	"github.com/infinity-oj/executor/interval/consul"
+	"github.com/infinity-oj/executor/internal/consul"
 	"google.golang.org/grpc"
 )
 
