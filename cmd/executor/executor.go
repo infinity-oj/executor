@@ -77,12 +77,14 @@ func main() {
 			log.Fatal(err)
 		}
 
-		stdOut, err := ioutil.ReadAll(stdout)
-		stdErr, err := ioutil.ReadAll(stderr)
-
+		cmd.Wait()
 		stdin.Close()
 		stdout.Close()
 		stderr.Close()
+
+		stdOut, err := ioutil.ReadFile("stdout")
+		stdErr, err := ioutil.ReadFile("stderr")
+
 
 		pushRes, err := pushJudgement(c, res.GetToken(), [][]byte{stdOut})
 		fmt.Println(stdOut)
