@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
 	"time"
 
@@ -44,17 +44,32 @@ func main() {
 
 		log.Printf("Get judgement, token: %s", res.GetToken())
 
-		if err := ioutil.WriteFile("elf", res.Slots[0].Value, 0644); err != nil {
+		if err := ioutil.WriteFile("elf", res.Slots[0].Value, 0755); err != nil {
 			log.Fatal(err)
 		}
 		if err := ioutil.WriteFile("in", res.Slots[1].Value, 0644); err != nil {
 			log.Fatal(err)
 		}
+
+		stdin, err := os.OpenFile("stdub", os.O_CREATE|os.O_WRONLY, 0600)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		stdout, err := os.OpenFile("stdout", os.O_CREATE|os.O_WRONLY, 0600)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		stderr, err := os.OpenFile("stderr", os.O_CREATE|os.O_WRONLY, 0600)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+
 		cmd := exec.Command("./elf", "<", "in", ">", "out")
 
-		//读取io.Writer类型的cmd.Stdout，再通过bytes.Buffer(缓冲byte类型的缓冲器)将byte类型转化为string类型(out.String():这是bytes类型提供的接口)
-		var out bytes.Buffer
-		cmd.Stdout = &out
+		cmd.Stdin = stdin
+		cmd.Stdout = stdout // 重定向标准输出到文件
+		cmd.Stderr = stderr
 
 		//Run执行c包含的命令，并阻塞直到完成。  这里stdout被取出，cmd.Wait()无法正确获取stdin,stdout,stderr，则阻塞在那了
 		if err := cmd.Run(); err != nil {
@@ -69,6 +84,10 @@ func main() {
 		}
 		log.Println(pushRes.GetStatus())
 
+		stdin.Close()
+		stdout.Close()
+		stderr.Close()
+		
 		time.Sleep(time.Second)
 	}
 }
